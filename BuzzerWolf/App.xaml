@@ -1,0 +1,16 @@
+﻿<Application x:Class="BuzzerWolf.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:BuzzerWolf.ViewModels"
+             xmlns:view="clr-namespace:BuzzerWolf.Views"
+             xmlns:local="clr-namespace:BuzzerWolf">
+    <Application.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+            <view:BBAPILogin />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AutoPromotionViewModel}">
+            <view:AutoPromotion />
+        </DataTemplate>
+    </Application.Resources>
+</Application>

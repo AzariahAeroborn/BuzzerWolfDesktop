@@ -1,0 +1,62 @@
+﻿<Window x:Class="BuzzerWolf.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:BuzzerWolf.ViewModels"
+        xmlns:local="clr-namespace:BuzzerWolf"
+        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
+        mc:Ignorable="d"
+        Title="BuzzerWolf"
+        Height="800" 
+        Width="1200"
+        FontSize="14">
+    <Window.Resources>
+        <BitmapImage x:Key="BallBullet" UriSource="/Resources/bb-ball.png" />
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="150" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ContentControl Grid.Row="0" Grid.Column="0"
+                        Content="{Binding Login}" />
+        <Border Name="Navigation"
+                Grid.Row="1" Grid.Column="0"
+                Visibility="{Binding Path=Login.IsLoggedIn, Converter={StaticResource BoolToVis}}"
+                BorderThickness="1"
+                VerticalAlignment="Top">
+            <StackPanel Orientation="Vertical">
+                <StackPanel.Resources>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Margin" Value="5 5"/> 
+                    </Style>
+                </StackPanel.Resources>
+                <TextBlock VerticalAlignment="Center">
+                    <TextBlock.InputBindings>
+                        <MouseBinding Command="{Binding ShowAutoPromotionCommand}" MouseAction="LeftClick" />
+                    </TextBlock.InputBindings>
+                <InlineUIContainer>
+                    <Image Source="{StaticResource BallBullet}" Height="16" />
+                </InlineUIContainer>
+                <Run>Automatic Promotion Checker</Run>
+                </TextBlock>
+                <TextBlock VerticalAlignment="Center">
+                    <TextBlock.InputBindings>
+                        <MouseBinding Command="{Binding ShowTeamHeadquartersCommand}" MouseAction="LeftClick" />
+                    </TextBlock.InputBindings>
+                <InlineUIContainer>
+                    <Image Source="{StaticResource BallBullet}" Height="16" />
+                </InlineUIContainer>
+                <Run>Team Headquarters</Run>
+                </TextBlock>
+            </StackPanel>
+        </Border>
+        <ContentControl Grid.RowSpan="2" Grid.Column="1"
+                        Content="{Binding ActiveViewModel}" />
+    </Grid>
+</Window>
