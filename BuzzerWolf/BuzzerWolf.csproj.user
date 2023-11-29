@@ -12,7 +12,10 @@
     <Compile Update="Views\AutoPromotion.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Views\BBAPILogin.xaml.cs">
+    <Compile Update="Views\LoginDialog.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\ProfileSelection.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -20,7 +23,10 @@
     <Page Update="Views\AutoPromotion.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Update="Views\BBAPILogin.xaml">
+    <Page Update="Views\LoginDialog.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Views\ProfileSelection.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="Views\MainWindow.xaml">

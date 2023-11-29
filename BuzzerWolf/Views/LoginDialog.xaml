@@ -1,0 +1,67 @@
+﻿<Window x:Class="BuzzerWolf.Views.LoginDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BuzzerWolf.Views"
+        mc:Ignorable="d"
+        x:Name="LoginDlg"
+        Title="BBAPI Login" Height="190" Width="320">
+
+    <Grid Margin="5 5"
+            VerticalAlignment="Top">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100" />
+            <ColumnDefinition Width="180" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="60" />
+        </Grid.RowDefinitions>
+        <Label Grid.Row="0" Grid.Column="0" HorizontalAlignment="Right">BBAPI User:</Label>
+        <TextBox Name="BBAPIUser"
+                    Text="{Binding User, UpdateSourceTrigger=PropertyChanged}"
+                    Grid.Row="0" Grid.Column="1"
+                    Height="20" />
+
+        <Label Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right">Access Key:</Label>
+        <TextBox Name="BBAPIAccessKey"
+                    Text="{Binding AccessKey, UpdateSourceTrigger=PropertyChanged}"
+                    Grid.Row="1" Grid.Column="1"
+                    Height="20" />
+
+        <Label Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right">Utopia Team:</Label>
+        <CheckBox Name="BBAPISecondTeam"
+                    IsChecked="{Binding SecondTeam}"
+                    Grid.Row="2" Grid.Column="1"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center" />
+
+        <StackPanel Grid.Row="3" Grid.ColumnSpan="2" 
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center">
+            <Button 
+                Width="75" 
+                Height="25"
+                IsCancel="True"
+                Margin="0 0 10 0"
+                Content="Close"></Button>
+
+            <Button 
+                Command="{Binding LoginBBAPICommand}"
+                CommandParameter="{Binding ElementName=LoginDlg}"
+                Width="125" 
+                Height="25"
+                IsDefault="True">Logon to BBAPI</Button>
+        </StackPanel>
+
+        <TextBlock Text="{Binding Status}"
+                    HorizontalAlignment="Center"
+                    Grid.Row="4" Grid.ColumnSpan="2"
+                    TextWrapping="Wrap" />
+    </Grid>
+
+</Window>

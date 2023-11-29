@@ -6,8 +6,8 @@
              xmlns:local="clr-namespace:BuzzerWolf">
     <Application.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
-        <DataTemplate DataType="{x:Type vm:LoginViewModel}">
-            <view:BBAPILogin />
+        <DataTemplate DataType="{x:Type vm:ProfileSelectionViewModel}">
+            <view:ProfileSelection />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:AutoPromotionViewModel}">
             <view:AutoPromotion />

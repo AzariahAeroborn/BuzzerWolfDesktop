@@ -13,7 +13,13 @@ namespace BuzzerWolf.BBAPI.Model
             ShortName = bbapiResponse.Descendants("shortName").First().Value;
             Owner = new TeamOwner(bbapiResponse.Descendants("owner").First());
             CreateDate = DateTime.Parse(bbapiResponse.Descendants("createDate").First().Value);
-            LastLoginDate = DateTime.Parse(bbapiResponse.Descendants("lastLoginDate").First().Value);
+
+            var lastLogin = bbapiResponse.Descendants("lastLoginDate").FirstOrDefault();
+            if (lastLogin != null)
+            {
+                LastLoginDate = DateTime.Parse(lastLogin.Value);
+            }
+
             League = new League(bbapiResponse.Descendants("league").First());
             Country = new Country(bbapiResponse.Descendants("country").First());
             Rival = new TeamRival(bbapiResponse.Descendants("rival").First());
@@ -24,7 +30,7 @@ namespace BuzzerWolf.BBAPI.Model
         public string ShortName { get; set; }
         public TeamOwner Owner { get; set; }
         public DateTime CreateDate { get; set; }
-        public DateTime LastLoginDate { get; set; }
+        public DateTime? LastLoginDate { get; set; }
         public League League { get; set; }
         public Country Country { get; set; }
         public TeamRival Rival { get; set; }

@@ -1,6 +1,6 @@
 ﻿using BuzzerWolf.BBAPI.Exceptions;
 using BuzzerWolf.BBAPI.Model;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.WebUtilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,38 +12,61 @@ namespace BuzzerWolf.BBAPI
 {
     public class BBAPIClient : IBBAPIClient
     {
+        private readonly SocketsHttpHandler _handler;
         private readonly HttpClient _client;
 
         public BBAPIClient()
         {
-            var handler = new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(15) };
-            _client = new HttpClient(handler)
+            _handler = new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(15) };
+            _client = CreateBBAPIClient();
+        }
+
+        private HttpClient CreateBBAPIClient()
+        {
+            return new HttpClient(_handler)
             {
                 BaseAddress = new Uri("https://bbapi.buzzerbeater.com")
             };
         }
 
-        public async Task<bool> Login(string userName, string accessKey)
+        public async Task<bool> Login(string userName, string accessKey, bool secondTeam)
         {
-            var response = await _client.GetAsync($"login.aspx?login={userName}&code={accessKey}");
-            XElement bbapiResponse = XElement.Load(await response.Content.ReadAsStreamAsync());
+            return await Login(userName, accessKey, secondTeam, _client);
+        }
 
-            var error = bbapiResponse.Descendants("Error").FirstOrDefault();
-            if (error != null)
+        private async Task<bool> Login(string userName, string accessKey, bool secondTeam, HttpClient client)
+        {
+            var bbapi = await CallAPI("login.aspx", new Dictionary<string, string?>()
             {
-                var errorType = error.Attribute("message")!.Value;
-                switch (errorType)
+                { "login", userName },
+                { "code", accessKey },
+                { "secondTeam", secondTeam ? "1" : null }
+            });
+
+            if (bbapi.IsSuccess)
+            {
+                return true;
+            }
+            else
+            {
+                switch (bbapi.Error)
                 {
                     case "NotAuthorized":
                         throw new UnauthorizedException();
                     case "ServerError":
                         throw new BBAPIServerErrorException();
+                    default:
+                        throw new UnexpectedResponseException();
                 }
             }
+        }
 
-            if (bbapiResponse.Descendants("loggedIn").FirstOrDefault() != null)
+        public async Task<TeamInfo> VerifyLogin(string userName, string accessKey, bool secondTeam)
+        {
+            var client = CreateBBAPIClient();
+            if (await Login(userName, accessKey, secondTeam, client))
             {
-                return true;
+                return await GetTeamInfo(client);
             }
 
             throw new UnexpectedResponseException();
@@ -169,10 +192,15 @@ namespace BuzzerWolf.BBAPI
 
         public async Task<TeamInfo> GetTeamInfo(int? teamId = null)
         {
+            return await GetTeamInfo(_client, teamId);
+        }
+
+        private async Task<TeamInfo> GetTeamInfo(HttpClient client, int? teamId = null)
+        {
             var bbapi = await CallAPI("teaminfo.aspx", new Dictionary<string, string?>()
             {
                 { "teamid", teamId?.ToString() }
-            });
+            }, client);
 
             if (bbapi.IsSuccess)
             {
@@ -233,8 +261,12 @@ namespace BuzzerWolf.BBAPI
 
         private async Task<BBAPIResponse> CallAPI(string requestPath, Dictionary<string, string?> queryParams)
         {
-            var queryString = QueryString.Create(queryParams.Where(q => q.Value != null));
-            var response = await _client.GetAsync($"{requestPath}{queryString}");
+            return await CallAPI(requestPath, queryParams, _client);
+        }
+
+        private async Task<BBAPIResponse> CallAPI(string requestPath, Dictionary<string, string?> queryParams, HttpClient client)
+        {
+            var response = await client.GetAsync(QueryHelpers.AddQueryString(requestPath, queryParams.Where(q => q.Value != null)));
             XElement bbapiResponse = XElement.Load(await response.Content.ReadAsStreamAsync());
 
             var error = bbapiResponse.Descendants("error").FirstOrDefault();
