@@ -6,14 +6,14 @@ namespace BuzzerWolf.Views
     /// <summary>
     /// Interaction logic for BBAPI.xaml
     /// </summary>
-    public partial class BBAPILogin : UserControl
+    public partial class ProfileSelection : UserControl
     {
-        public BBAPILogin()
+        public ProfileSelection()
         {
             InitializeComponent();
         }
 
-        public BBAPILogin(LoginViewModel vm) : this()
+        public ProfileSelection(ProfileSelectionViewModel vm) : this()
         {
             DataContext = vm;
         }

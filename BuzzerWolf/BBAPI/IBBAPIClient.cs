@@ -6,7 +6,8 @@ namespace BuzzerWolf.BBAPI
 {
     public interface IBBAPIClient
     {
-        Task<bool> Login(string userName, string accessKey);
+        Task<bool> Login(string userName, string accessKey, bool secondTeam);
+        Task<TeamInfo> VerifyLogin(string userName, string accessKey, bool secondTeam);
         Task<bool> Logout();
         Task<Arena> GetArena(int? teamId = null);
         void GetBoxScore(int matchId);

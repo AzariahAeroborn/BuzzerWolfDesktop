@@ -1,0 +1,44 @@
+﻿<UserControl x:Class="BuzzerWolf.Views.ProfileSelection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vm="clr-namespace:BuzzerWolf.ViewModels"
+             xmlns:local="clr-namespace:BuzzerWolf.Views"
+             d:DataContext="{d:DesignInstance Type=vm:ProfileSelectionViewModel}"
+             mc:Ignorable="d" 
+             d:DesignHeight="90" d:DesignWidth="300"
+             FontSize="14">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>        
+        <StackPanel Orientation="Horizontal" 
+                    HorizontalAlignment="Center"
+                    Margin="5 2" 
+                    Grid.Row="0">
+            <Label>Profile:</Label>
+            <ComboBox MinWidth="200"
+                      ItemsSource="{Binding AvailableProfiles}"
+                      DisplayMemberPath="TeamName"
+                      SelectedItem="{Binding SelectedProfile}" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="5 2"
+                    Grid.Row="1">
+            <Button Command="{Binding RemoveProfileCommand}"
+                    Width="125"
+                    Margin="5 0">Remove Profile</Button>
+            <Button Command="{Binding AddProfileCommand}"
+                    Width="125"
+                    Margin="5 0">Add Profile</Button>
+        </StackPanel>
+        <TextBlock Grid.Row="2"
+                   HorizontalAlignment="Center"
+                   Text="{Binding Status}" />
+    </Grid>
+</UserControl>

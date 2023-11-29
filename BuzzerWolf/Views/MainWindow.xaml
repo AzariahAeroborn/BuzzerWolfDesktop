@@ -20,14 +20,17 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="150" />
+            <RowDefinition Height="90" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <ContentControl Grid.Row="0" Grid.Column="0"
-                        Content="{Binding Login}" />
+        <ContentControl Grid.Row="0" 
+                        Grid.Column="0"
+                        Margin="5 5"
+                        VerticalAlignment="Top"                        
+                        Content="{Binding ProfileSelection}" />
         <Border Name="Navigation"
                 Grid.Row="1" Grid.Column="0"
-                Visibility="{Binding Path=Login.IsLoggedIn, Converter={StaticResource BoolToVis}}"
+                Visibility="{Binding Path=ProfileSelection.IsLoggedIn, Converter={StaticResource BoolToVis}}"
                 BorderThickness="1"
                 VerticalAlignment="Top">
             <StackPanel Orientation="Vertical">

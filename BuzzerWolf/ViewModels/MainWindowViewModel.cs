@@ -8,13 +8,13 @@ namespace BuzzerWolf.ViewModels
 {
     public partial class MainWindowViewModel : ObservableObject
     {
-        public LoginViewModel Login { get; init; }
+        public ProfileSelectionViewModel ProfileSelection { get; init; }
         private readonly AutoPromotionViewModel _autoPromotion;
         private readonly TeamHeadquartersViewModel _teamHeadquarters;
 
-        public MainWindowViewModel(LoginViewModel login, AutoPromotionViewModel autoPromotion, TeamHeadquartersViewModel teamHeadquarters)
+        public MainWindowViewModel(ProfileSelectionViewModel profileSelection, AutoPromotionViewModel autoPromotion, TeamHeadquartersViewModel teamHeadquarters)
         {
-            Login = login;
+            ProfileSelection = profileSelection;
             _autoPromotion = autoPromotion;
             _teamHeadquarters = teamHeadquarters;
         }

@@ -1,4 +1,5 @@
 ﻿using BuzzerWolf.BBAPI;
+using BuzzerWolf.Models;
 using BuzzerWolf.ViewModels;
 using BuzzerWolf.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,9 +29,10 @@ namespace BuzzerWolf
         private void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<IBBAPIClient, BBAPIClient>();
+            services.AddSingleton<BuzzerWolfContext>();
 
-            services.AddSingleton<LoginViewModel>();
-            services.AddSingleton<BBAPILogin>();
+            services.AddSingleton<ProfileSelectionViewModel>();
+            services.AddSingleton<ProfileSelection>();
 
             services.AddSingleton<AutoPromotionViewModel>();
             services.AddSingleton<AutoPromotion>();
