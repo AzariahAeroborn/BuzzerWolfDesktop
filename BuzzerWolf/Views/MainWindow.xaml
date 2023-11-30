@@ -22,6 +22,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="90" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="60" />
         </Grid.RowDefinitions>
         <ContentControl Grid.Row="0" 
                         Grid.Column="0"
@@ -57,6 +58,21 @@
                 </InlineUIContainer>
                 <Run>Team Headquarters</Run>
                 </TextBlock>
+            </StackPanel>
+        </Border>
+        <Border Name="SyncSummary"
+                Grid.Row="2" Grid.Column="0"
+                Visibility="{Binding Path=ProfileSelection.IsLoggedIn, Converter={StaticResource BoolToVis}}"
+                BorderThickness="1"
+                VerticalAlignment="Center">
+            <StackPanel Orientation="Vertical">
+                <TextBlock Text="{Binding Synchronization.StatusSummary}" 
+                           Height="20"
+                           HorizontalAlignment="Center" />
+                <Button Command="{Binding ShowSynchronizationCommand}"
+                        Width="125"
+                        Height="20"
+                        Margin="5 5">Show Sync Info</Button>
             </StackPanel>
         </Border>
         <ContentControl Grid.RowSpan="2" Grid.Column="1"

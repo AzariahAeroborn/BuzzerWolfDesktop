@@ -36,7 +36,9 @@ namespace BuzzerWolf
 
             services.AddSingleton<AutoPromotionViewModel>();
             services.AddSingleton<AutoPromotion>();
-            
+
+            services.AddSingleton<SynchronizationViewModel>();
+
             services.AddSingleton<TeamHeadquartersViewModel>();
 
             services.AddSingleton<MainWindowViewModel>();

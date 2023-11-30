@@ -6,7 +6,11 @@ namespace BuzzerWolf.Models
 {
     public class BuzzerWolfContext : DbContext
     {
+        public int LoggedInTeam { get; set; } = -1;
+
         public DbSet<Profile> Profiles { get; set; }
+        public DbSet<Season> Seasons { get; set; }
+        public DbSet<Sync> Sync { get; set; }
 
         private string _dbPath;
 
@@ -16,5 +20,11 @@ namespace BuzzerWolf.Models
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.UseSqlite($"Data Source={_dbPath}");
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Sync>().HasQueryFilter(f => f.TeamId == -1 || f.TeamId == LoggedInTeam);
+        }
     }
 }

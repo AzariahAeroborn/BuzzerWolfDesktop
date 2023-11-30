@@ -17,8 +17,10 @@
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5 10">
             <Label>Season:</Label>
-            <TextBox Width="50"
-                     Text="{Binding Season}" />
+            <ComboBox MinWidth="50"
+                      ItemsSource="{Binding Seasons}"
+                      DisplayMemberPath="Id"
+                      SelectedItem="{Binding SelectedSeason}" />
             <Label>Country:</Label>
             <ComboBox MinWidth="200"
                       ItemsSource="{Binding Countries}"

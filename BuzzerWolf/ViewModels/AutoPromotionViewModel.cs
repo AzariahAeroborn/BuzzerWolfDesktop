@@ -1,27 +1,28 @@
 ﻿using BuzzerWolf.BBAPI;
 using BuzzerWolf.BBAPI.Model;
-using BuzzerWolf.Extensions;
 using BuzzerWolf.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Data;
 
 namespace BuzzerWolf.ViewModels
 {
     public partial class AutoPromotionViewModel : ObservableObject
     {
         private readonly IBBAPIClient _bbapi;
-        public AutoPromotionViewModel(IBBAPIClient bbapi)
+        private readonly BuzzerWolfContext _context;
+        public AutoPromotionViewModel(IBBAPIClient bbapi, BuzzerWolfContext context)
         {
             _bbapi = bbapi;
+            _context = context;
         }
 
         [ObservableProperty]
-        private int? season;
+        private List<Models.Season> seasons = new();
+        [ObservableProperty]
+        private Models.Season? selectedSeason;
 
         [ObservableProperty]
         private List<Country> countries = new();
@@ -50,7 +51,7 @@ namespace BuzzerWolf.ViewModels
 
         public bool ShowChampionPromotionSpots => ChampionPromotionSpots > 0;
 
-        partial void OnSeasonChanged(int? value)
+        partial void OnSelectedSeasonChanged(Models.Season? value)
         {
             OnSelectedDivisionChanged(null);
         }
@@ -63,7 +64,7 @@ namespace BuzzerWolf.ViewModels
 
         partial void OnSelectedDivisionChanged(int? value)
         {
-            if (SelectedCountry == null || SelectedDivision == null) return;
+            if (SelectedSeason == null || SelectedCountry == null || SelectedDivision == null) return;
 
             var auto = 0;
             var total = 0;
@@ -73,7 +74,7 @@ namespace BuzzerWolf.ViewModels
             var standings = new List<TeamStanding>();
             foreach (var league in leaguesList)
             {
-                var leagueStandings = Task.Run(() => _bbapi.GetStandings(league.Id, Season)).Result;
+                var leagueStandings = Task.Run(() => _bbapi.GetStandings(league.Id, SelectedSeason.Id)).Result;
                 if (leagueStandings.IsFinal)
                 {
                     var winner = leagueStandings.Big8.Where(t => t.IsWinner).Union(leagueStandings.Great8.Where(t => t.IsWinner)).First();
@@ -143,6 +144,7 @@ namespace BuzzerWolf.ViewModels
         public async Task Activate()
         {
             Countries = (await _bbapi.GetCountries()).Where(c => c.Divisions > 1).ToList();
+            Seasons = _context.Seasons.OrderByDescending(s => s.Id).ToList();
         }
     }
 }
