@@ -26,6 +26,7 @@ namespace BuzzerWolf.Models
         public string ConferenceName { get; set; }
         public int PromotionRank { get; set; }
         public bool IsChampionPromotion { get; set; }
+        public bool IsEliminated { get; set; }
         public bool IsAutoPromotion { get; set; }
         public bool IsBotPromotion { get; set; }
         public bool IsTotalPromotion { get; set; }

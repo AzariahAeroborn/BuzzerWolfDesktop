@@ -57,6 +57,9 @@
                             <DataTrigger Binding="{Binding IsAutoPromotion}" Value="True">
                                 <Setter Property="Background" Value="LightGreen" />
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding IsEliminated}" Value="True">
+                                <Setter Property="FontStyle" Value="Italic" />
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </DataGrid.RowStyle>

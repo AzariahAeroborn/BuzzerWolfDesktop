@@ -69,6 +69,9 @@ namespace BuzzerWolf.ViewModels
             var auto = 0;
             var total = 0;
             var bot = 0;
+            var maxRankToCheck = 2;
+            var playoffMatchTypes = new MatchType[] { MatchType.QuarterFinal, MatchType.SemiFinal, MatchType.Final };
+            var isPlayoffs = false;
 
             var leaguesList = Task.Run(() => _bbapi.GetLeagues(SelectedCountry.Id, SelectedDivision.Value)).Result;
             var standings = new List<TeamStanding>();
@@ -77,8 +80,19 @@ namespace BuzzerWolf.ViewModels
                 var leagueStandings = Task.Run(() => _bbapi.GetStandings(league.Id, SelectedSeason.Id)).Result;
                 if (leagueStandings.IsFinal)
                 {
+                    // Season over, no need to show anything other than conference champions in output
+                    maxRankToCheck = 1;
+
                     var winner = leagueStandings.Big8.Where(t => t.IsWinner).Union(leagueStandings.Great8.Where(t => t.IsWinner)).First();
                     if (winner.IsBot) { bot++; }
+                } else
+                {
+                    if (Task.Run(() => _bbapi.GetSchedule(leagueStandings.Big8.OrderBy(t => t.ConferenceRank).First().TeamId, SelectedSeason.Id)).Result.Matches.Any(m => playoffMatchTypes.Contains(m.Type)))
+                    {
+                        // In the playoffs, no need to show anything other than conference champions in output
+                        maxRankToCheck = 1;
+                        isPlayoffs = true;
+                    }
                 }
                 standings.AddRange(leagueStandings.Big8);
                 standings.AddRange(leagueStandings.Great8);
@@ -124,7 +138,7 @@ namespace BuzzerWolf.ViewModels
             } while (checkDivision >= 1);
 
             ChampionPromotionSpots = standings.Count(s => s.IsWinner);
-            PromotionStandings = standings.Where(s => s.IsWinner || s.ConferenceRank <= 2)
+            PromotionStandings = standings.Where(s => s.IsWinner || s.ConferenceRank <= maxRankToCheck)
                                         .OrderByDescending(s => s.IsWinner)
                                         .ThenBy(s => s.ConferenceRank)
                                         .ThenByDescending(s => s.Wins)
@@ -132,6 +146,10 @@ namespace BuzzerWolf.ViewModels
                                         .Select((s, idx) => new PromotionStanding(s)
                                         {
                                             PromotionRank = idx + 1,
+                                            IsEliminated = (isPlayoffs ? (Task.Run(() => _bbapi.GetSchedule(s.TeamId, SelectedSeason.Id)).Result.Matches
+                                                                            .Where(m => playoffMatchTypes.Contains(m.Type) && m.StartTime < DateTime.UtcNow)
+                                                                            .OrderByDescending(m => m.StartTime)
+                                                                            .First().WinningTeamId != s.TeamId) : false),
                                             IsChampionPromotion = s.IsWinner,
                                             IsAutoPromotion = (!s.IsWinner && (idx + 1) <= (ChampionPromotionSpots + AutoPromotionSpots)),
                                             IsBotPromotion = (!s.IsWinner && (idx + 1) > (ChampionPromotionSpots + AutoPromotionSpots) && (idx + 1) <= (ChampionPromotionSpots + AutoPromotionSpots + BotPromotionSpots)),
