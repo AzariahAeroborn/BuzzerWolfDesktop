@@ -13,7 +13,7 @@ namespace BuzzerWolf.BBAPI.Model
             Type = FromBBAPI(matchInfo.Attribute("type")!.Value);
             AwayTeam = new MatchTeamInfo(matchInfo.Descendants("awayTeam").First());
             HomeTeam = new MatchTeamInfo(matchInfo.Descendants("homeTeam").First());
-            WinningTeamId = HomeTeam.Score > AwayTeam.Score ? HomeTeam.TeamId : AwayTeam.TeamId;
+            WinningTeamId = HomeTeam.Score == null ? null : (HomeTeam.Score > AwayTeam.Score ? HomeTeam.TeamId : AwayTeam.TeamId);
         }
 
         public int Id { get; set; }
@@ -21,7 +21,7 @@ namespace BuzzerWolf.BBAPI.Model
         public MatchType Type { get; set; }
         public MatchTeamInfo AwayTeam { get; set; }
         public MatchTeamInfo HomeTeam { get; set; }
-        public int WinningTeamId { get; set; }
+        public int? WinningTeamId { get; set; }
 
         private static MatchType FromBBAPI(string matchType) =>
             matchType switch

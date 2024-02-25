@@ -70,8 +70,6 @@ namespace BuzzerWolf.ViewModels
             var total = 0;
             var bot = 0;
             var maxRankToCheck = 2;
-            var playoffMatchTypes = new MatchType[] { MatchType.QuarterFinal, MatchType.SemiFinal, MatchType.Final };
-            var isPlayoffs = false;
 
             var leaguesList = Task.Run(() => _bbapi.GetLeagues(SelectedCountry.Id, SelectedDivision.Value)).Result;
             var standings = new List<TeamStanding>();
@@ -85,13 +83,19 @@ namespace BuzzerWolf.ViewModels
 
                     var winner = leagueStandings.Big8.Where(t => t.IsWinner).Union(leagueStandings.Great8.Where(t => t.IsWinner)).First();
                     if (winner.IsBot) { bot++; }
-                } else
+                }
+                else
                 {
-                    if (Task.Run(() => _bbapi.GetSchedule(leagueStandings.Big8.OrderBy(t => t.ConferenceRank).First().TeamId, SelectedSeason.Id)).Result.Matches.Any(m => playoffMatchTypes.Contains(m.Type)))
+                    if (leagueStandings.Playoffs.Any(m => m.WinningTeamId != null))
                     {
                         // In the playoffs, no need to show anything other than conference champions in output
                         maxRankToCheck = 1;
-                        isPlayoffs = true;
+                        leagueStandings.Big8.ForEach(b8 => b8.IsEliminated = !leagueStandings.Playoffs.Any(po => po.AwayTeam.TeamId == b8.TeamId || po.HomeTeam.TeamId == b8.TeamId) ||
+                                                                              leagueStandings.Playoffs.Where(p => p.WinningTeamId != null && p.StartTime <= leagueStandings.Playoffs.Where(p => p.WinningTeamId != null).Max(p => p.StartTime))
+                                                                                                      .Any(po => (po.AwayTeam.TeamId == b8.TeamId || po.HomeTeam.TeamId == b8.TeamId) && po.WinningTeamId != b8.TeamId));
+                        leagueStandings.Great8.ForEach(g8 => g8.IsEliminated = !leagueStandings.Playoffs.Any(po => po.AwayTeam.TeamId == g8.TeamId || po.HomeTeam.TeamId == g8.TeamId) ||
+                                                                                leagueStandings.Playoffs.Where(p => p.WinningTeamId != null && p.StartTime <= leagueStandings.Playoffs.Where(p => p.WinningTeamId != null).Max(p => p.StartTime))
+                                                                                                        .Any(po => (po.AwayTeam.TeamId == g8.TeamId || po.HomeTeam.TeamId == g8.TeamId) && po.WinningTeamId != g8.TeamId));
                     }
                 }
                 standings.AddRange(leagueStandings.Big8);
@@ -146,10 +150,7 @@ namespace BuzzerWolf.ViewModels
                                         .Select((s, idx) => new PromotionStanding(s)
                                         {
                                             PromotionRank = idx + 1,
-                                            IsEliminated = (isPlayoffs ? (Task.Run(() => _bbapi.GetSchedule(s.TeamId, SelectedSeason.Id)).Result.Matches
-                                                                            .Where(m => playoffMatchTypes.Contains(m.Type) && m.StartTime < DateTime.UtcNow)
-                                                                            .OrderByDescending(m => m.StartTime)
-                                                                            .First().WinningTeamId != s.TeamId) : false),
+                                            IsEliminated = s.IsEliminated,
                                             IsChampionPromotion = s.IsWinner,
                                             IsAutoPromotion = (!s.IsWinner && (idx + 1) <= (ChampionPromotionSpots + AutoPromotionSpots)),
                                             IsBotPromotion = (!s.IsWinner && (idx + 1) > (ChampionPromotionSpots + AutoPromotionSpots) && (idx + 1) <= (ChampionPromotionSpots + AutoPromotionSpots + BotPromotionSpots)),
