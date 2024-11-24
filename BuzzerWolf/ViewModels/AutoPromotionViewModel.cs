@@ -27,7 +27,7 @@ namespace BuzzerWolf.ViewModels
         [ObservableProperty]
         private List<Country> countries = new();
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(CanSelectDivision),nameof(Divisions))]
+        [NotifyPropertyChangedFor(nameof(CanSelectDivision), nameof(Divisions))]
         private Country? selectedCountry;
 
         public List<int> Divisions => (SelectedCountry != null && SelectedCountry.Divisions > 1) ? Enumerable.Range(2, (int)(SelectedCountry.Divisions - 1)).ToList() : new List<int>();
@@ -90,12 +90,20 @@ namespace BuzzerWolf.ViewModels
                     {
                         // In the playoffs, no need to show anything other than conference champions in output
                         maxRankToCheck = 1;
-                        leagueStandings.Big8.ForEach(b8 => b8.IsEliminated = !leagueStandings.Playoffs.Any(po => po.AwayTeam.TeamId == b8.TeamId || po.HomeTeam.TeamId == b8.TeamId) ||
-                                                                              leagueStandings.Playoffs.Where(p => p.WinningTeamId != null && p.StartTime <= leagueStandings.Playoffs.Where(p => p.WinningTeamId != null).Max(p => p.StartTime))
-                                                                                                      .Any(po => (po.AwayTeam.TeamId == b8.TeamId || po.HomeTeam.TeamId == b8.TeamId) && po.WinningTeamId != b8.TeamId));
-                        leagueStandings.Great8.ForEach(g8 => g8.IsEliminated = !leagueStandings.Playoffs.Any(po => po.AwayTeam.TeamId == g8.TeamId || po.HomeTeam.TeamId == g8.TeamId) ||
-                                                                                leagueStandings.Playoffs.Where(p => p.WinningTeamId != null && p.StartTime <= leagueStandings.Playoffs.Where(p => p.WinningTeamId != null).Max(p => p.StartTime))
-                                                                                                        .Any(po => (po.AwayTeam.TeamId == g8.TeamId || po.HomeTeam.TeamId == g8.TeamId) && po.WinningTeamId != g8.TeamId));
+                        leagueStandings.Big8.ForEach(b8 =>
+                        {
+                            b8.IsEliminated = !leagueStandings.Playoffs.Any(po => po.AwayTeam.TeamId == b8.TeamId || po.HomeTeam.TeamId == b8.TeamId) ||
+                                               leagueStandings.Playoffs.Any(p => p.WinningTeamId != null && (p.AwayTeam.TeamId == b8.TeamId || p.HomeTeam.TeamId == b8.TeamId) && p.Type != MatchType.Final && p.WinningTeamId != b8.TeamId) ||
+                                               leagueStandings.Playoffs.Where(p => p.WinningTeamId != null && (p.AwayTeam.TeamId == b8.TeamId || p.HomeTeam.TeamId == b8.TeamId) && p.Type == MatchType.Final && p.WinningTeamId != b8.TeamId).Count() == 2;
+                            b8.IsWinner = leagueStandings.Playoffs.Where(p => p.Type == MatchType.Final && p.WinningTeamId == b8.TeamId).Count() == 2;
+                        });
+                        leagueStandings.Great8.ForEach(g8 =>
+                        {
+                            g8.IsEliminated = !leagueStandings.Playoffs.Any(po => po.AwayTeam.TeamId == g8.TeamId || po.HomeTeam.TeamId == g8.TeamId) ||
+                                               leagueStandings.Playoffs.Any(p => p.WinningTeamId != null && (p.AwayTeam.TeamId == g8.TeamId || p.HomeTeam.TeamId == g8.TeamId) && p.Type != MatchType.Final && p.WinningTeamId != g8.TeamId) ||
+                                               leagueStandings.Playoffs.Where(p => p.WinningTeamId != null && (p.AwayTeam.TeamId == g8.TeamId || p.HomeTeam.TeamId == g8.TeamId) && p.Type == MatchType.Final && p.WinningTeamId != g8.TeamId).Count() == 2;
+                            g8.IsWinner = leagueStandings.Playoffs.Where(p => p.Type == MatchType.Final && p.WinningTeamId == g8.TeamId).Count() == 2;
+                        });
                     }
                 }
                 standings.AddRange(leagueStandings.Big8);
@@ -116,18 +124,21 @@ namespace BuzzerWolf.ViewModels
                         if (leagueStandings.IsFinal)
                         {
 
-                        } else
+                        }
+                        else
                         {
                             leagueBots = leagueStandings.Big8.Count(t => t.ConferenceRank < 8 && t.IsBot) + leagueStandings.Great8.Count(t => t.ConferenceRank < 8 && t.IsBot);
                         }
-                    } else
+                    }
+                    else
                     {
                         leagueBots = leagueStandings.Big8.Count(t => t.IsBot) + leagueStandings.Great8.Count(t => t.IsBot);
                     }
 
                     if (checkDivision == nextDivisionHigher)
                     {
-                        auto += (SelectedCountry.Name == "Utopia" && SelectedDivision < 4 ? 2 : 1);
+                        auto += (SelectedCountry.Name == "Utopia" && SelectedDivision < 4 ? 2 : 
+                                 SelectedCountry.Name == "Utopia" && SelectedDivision == 4 ? 0 : 1);
                         total += (SelectedCountry.Name == "Utopia" ? 6 : 5);
                     }
 
@@ -155,7 +166,8 @@ namespace BuzzerWolf.ViewModels
                                             IsAutoPromotion = (!s.IsWinner && (idx + 1) <= (ChampionPromotionSpots + AutoPromotionSpots)),
                                             IsBotPromotion = (!s.IsWinner && (idx + 1) > (ChampionPromotionSpots + AutoPromotionSpots) && (idx + 1) <= (ChampionPromotionSpots + AutoPromotionSpots + BotPromotionSpots)),
                                             IsTotalPromotion = (!s.IsWinner && (idx + 1) > (ChampionPromotionSpots + AutoPromotionSpots + BotPromotionSpots) && (idx + 1) <= TotalPromotionSpots),
-                                        }).ToList();
+                                        })
+                                        .ToList();
         }
 
         public bool CanSelectDivision => SelectedCountry != null;
