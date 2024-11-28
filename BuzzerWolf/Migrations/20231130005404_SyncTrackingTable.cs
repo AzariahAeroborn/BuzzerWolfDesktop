@@ -38,11 +38,6 @@ namespace BuzzerWolf.Migrations
                 {
                     table.PrimaryKey("PK_Sync", x => new { x.TeamId, x.DataTable });
                 });
-            migrationBuilder.InsertData(
-                table: "Sync",
-                columns: new[] { nameof(Sync.TeamId), nameof(Sync.DataTable), nameof(Sync.LastSync), nameof(Sync.NextAutoSync) },
-                values: new object[,] { { -1, "seasons", DateTimeOffset.MinValue, DateTimeOffset.MinValue } }
-            );
         }
 
         /// <inheritdoc />

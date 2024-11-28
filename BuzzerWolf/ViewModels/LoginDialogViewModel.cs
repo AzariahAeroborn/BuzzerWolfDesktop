@@ -57,7 +57,6 @@ namespace BuzzerWolf.ViewModels
                     };
 
                     _context.Profiles.Add(LoggedInTeam);
-                    _context.Sync.AddRange(Sync.InitializeFor(LoggedInTeam.TeamId));
                     _context.SaveChanges();
 
                     loginDialog.DialogResult = true;

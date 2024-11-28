@@ -24,11 +24,10 @@ namespace BuzzerWolf.ViewModels
         private ObservableObject? activeViewModel;
 
         [RelayCommand]
-        private async Task ShowAutoPromotion()
+        private void ShowAutoPromotion()
         {
-            await _autoPromotion.Activate();
+            _autoPromotion.Activate();
             ActiveViewModel = _autoPromotion;
-            return;
         }
 
         [RelayCommand]

@@ -1,23 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 
 namespace BuzzerWolf.Models
 {
-    [PrimaryKey(nameof(TeamId),nameof(DataTable))]
+    [PrimaryKey(nameof(EntityId),nameof(DataTable))]
     public class Sync
     {
-        public int TeamId { get; set; }
+        public int EntityId { get; set; }
+        public int? Season { get; set; }
         public string DataTable { get; set; }
 
         public DateTimeOffset LastSync { get; set; }
         public DateTimeOffset NextAutoSync { get; set; }
-
-        public static List<Sync> InitializeFor(int teamId)
-        {
-            return new List<Sync>
-            {
-            };
-        }
     }
 }

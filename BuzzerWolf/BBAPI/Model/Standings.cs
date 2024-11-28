@@ -11,14 +11,14 @@ namespace BuzzerWolf.BBAPI.Model
         {
             League = new League(bbapiResponse.Descendants("league").First());
             Country = new Country(bbapiResponse.Descendants("country").First());
+            Season = int.Parse(bbapiResponse.Descendants("standings").First().Attribute("season")!.Value);
 
             var finalResults = bbapiResponse.Descendants("finalResults").FirstOrDefault();
-            int? winningTeamId = null;
             List<int> relegatingTeams = new();
             if (finalResults != null)
             {
                 IsFinal = true;
-                winningTeamId = int.Parse(finalResults.Descendants("winner").First().Attribute("id")!.Value);
+                WinningTeamId = int.Parse(finalResults.Descendants("winner").First().Attribute("id")!.Value);
                 foreach (var relegatingTeam in finalResults.Descendants("relegated"))
                 {
                     relegatingTeams.Add(int.Parse(relegatingTeam.Attribute("id")!.Value));
@@ -39,14 +39,15 @@ namespace BuzzerWolf.BBAPI.Model
             var conferences = bbapiResponse.Descendants("conference");
             foreach (var (teamStanding, index) in conferences.ElementAt(0).Descendants("team").WithIndex())
             {
-                Big8.Add(new TeamStanding(teamStanding, index+1, League.Name, "Big 8", winningTeamId, relegatingTeams));
+                Big8.Add(new TeamStanding(teamStanding, index+1, League.Name, "Big 8", WinningTeamId, relegatingTeams));
             }
             foreach (var (teamStanding, index) in conferences.ElementAt(1).Descendants("team").WithIndex())
             {
-                Great8.Add(new TeamStanding(teamStanding, index+1, League.Name, "Great 8", winningTeamId, relegatingTeams));
+                Great8.Add(new TeamStanding(teamStanding, index+1, League.Name, "Great 8", WinningTeamId, relegatingTeams));
             }
         }
 
+        public int Season { get; set; }
         public League League { get; set; }
         public Country Country { get; set; }
         public List<TeamStanding> Big8 { get; } = new List<TeamStanding>();

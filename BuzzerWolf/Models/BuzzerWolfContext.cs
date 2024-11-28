@@ -10,6 +10,12 @@ namespace BuzzerWolf.Models
 
         public DbSet<Profile> Profiles { get; set; }
         public DbSet<Season> Seasons { get; set; }
+        public DbSet<Country> Countries { get; set; }
+        public DbSet<League> Leagues { get; set; }
+        public DbSet<PlayoffSchedule> LeaguePlayoffs { get; set; }
+        public DbSet<Result> LeagueResults { get; set; }
+        public DbSet<Match> Matches { get; set; }
+        public DbSet<Standings> Standings { get; set; }
         public DbSet<Sync> Sync { get; set; }
 
         private string _dbPath;
@@ -24,7 +30,7 @@ namespace BuzzerWolf.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<Sync>().HasQueryFilter(f => f.TeamId == -1 || f.TeamId == LoggedInTeam);
+            modelBuilder.Entity<Sync>().HasQueryFilter(f => f.EntityId == -1 || f.EntityId == LoggedInTeam);
         }
     }
 }

@@ -51,11 +51,11 @@
                             <DataTrigger Binding="{Binding IsBotPromotion}" Value="True">
                                 <Setter Property="Background" Value="Yellow" />
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding IsChampionPromotion}" Value="True">
-                                <Setter Property="Background" Value="OrangeRed" />
-                            </DataTrigger>
                             <DataTrigger Binding="{Binding IsAutoPromotion}" Value="True">
                                 <Setter Property="Background" Value="LightGreen" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsChampionPromotion}" Value="True">
+                                <Setter Property="Background" Value="OrangeRed" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsEliminated}" Value="True">
                                 <Setter Property="FontStyle" Value="Italic" />
@@ -72,6 +72,9 @@
                     <DataGridTextColumn Header="Wins" Binding="{Binding Wins}" />
                     <DataGridTextColumn Header="Losses" Binding="{Binding Losses}" />
                     <DataGridTextColumn Header="PD" Binding="{Binding PointDifference}" />
+                    <DataGridTextColumn Header="SOS Rem" Binding="{Binding RemainingStrengthOfSchedule}" />
+                    <DataGridTextColumn Header="Next Opp" Binding="{Binding NextOpponent}" />
+                    <DataGridTextColumn Header="Prev Result" Binding="{Binding NextOpponentLastResult}" />
                 </DataGrid.Columns>
             </DataGrid>
             <StackPanel Orientation="Vertical"

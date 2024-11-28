@@ -3,6 +3,7 @@ using System;
 using BuzzerWolf.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BuzzerWolf.Migrations
 {
     [DbContext(typeof(BuzzerWolfContext))]
-    partial class BuzzerWolfContextModelSnapshot : ModelSnapshot
+    [Migration("20241127050220_SynchronizeCountriesAndMoreLeagueInfo")]
+    partial class SynchronizeCountriesAndMoreLeagueInfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -20,6 +23,7 @@ namespace BuzzerWolf.Migrations
             modelBuilder.Entity("BuzzerWolf.Models.Country", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("Divisions")
@@ -40,6 +44,7 @@ namespace BuzzerWolf.Migrations
             modelBuilder.Entity("BuzzerWolf.Models.League", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("CountryId")
@@ -60,6 +65,7 @@ namespace BuzzerWolf.Migrations
             modelBuilder.Entity("BuzzerWolf.Models.Match", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("AwayTeamId")
@@ -111,6 +117,7 @@ namespace BuzzerWolf.Migrations
             modelBuilder.Entity("BuzzerWolf.Models.Profile", b =>
                 {
                     b.Property<int>("TeamId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("AccessKey")
@@ -152,6 +159,7 @@ namespace BuzzerWolf.Migrations
             modelBuilder.Entity("BuzzerWolf.Models.Season", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("Finish")
@@ -208,7 +216,7 @@ namespace BuzzerWolf.Migrations
 
             modelBuilder.Entity("BuzzerWolf.Models.Sync", b =>
                 {
-                    b.Property<int>("EntityId")
+                    b.Property<int>("TeamId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("DataTable")
@@ -220,10 +228,7 @@ namespace BuzzerWolf.Migrations
                     b.Property<DateTimeOffset>("NextAutoSync")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("Season")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("EntityId", "DataTable");
+                    b.HasKey("TeamId", "DataTable");
 
                     b.ToTable("Sync");
                 });
