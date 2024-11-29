@@ -30,7 +30,6 @@ namespace BuzzerWolf.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<Sync>().HasQueryFilter(f => f.EntityId == -1 || f.EntityId == LoggedInTeam);
         }
     }
 }

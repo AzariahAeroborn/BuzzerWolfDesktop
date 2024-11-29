@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Windows.Data;
 
 namespace BuzzerWolf.Extensions
 {
@@ -11,6 +12,22 @@ namespace BuzzerWolf.Extensions
     /// <typeparam name="T"></typeparam> 
     public class ObservableRangeCollection<T> : ObservableCollection<T>
     {
+        private readonly object SyncLock = new();
+        public ObservableRangeCollection()
+        {
+            BindingOperations.EnableCollectionSynchronization(this, this.SyncLock);
+        }
+
+        public ObservableRangeCollection(List<T> list) : base(list)
+        {
+            BindingOperations.EnableCollectionSynchronization(this, this.SyncLock);
+        }
+
+        public ObservableRangeCollection(IEnumerable<T> list) : base(list)
+        {
+            BindingOperations.EnableCollectionSynchronization(this, this.SyncLock);
+        }
+
         /// <summary> 
         /// Adds the elements of the specified collection to the end of the ObservableCollection(Of T). 
         /// </summary> 
@@ -52,19 +69,5 @@ namespace BuzzerWolf.Extensions
             foreach (var i in collection) Items.Add(i);
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
-
-        /// <summary> 
-        /// Initializes a new instance of the System.Collections.ObjectModel.ObservableCollection(Of T) class. 
-        /// </summary> 
-        public ObservableRangeCollection()
-            : base() { }
-
-        /// <summary> 
-        /// Initializes a new instance of the System.Collections.ObjectModel.ObservableCollection(Of T) class that contains elements copied from the specified collection. 
-        /// </summary> 
-        /// <param name="collection">collection: The collection from which the elements are copied.</param> 
-        /// <exception cref="System.ArgumentNullException">The collection parameter cannot be null.</exception> 
-        public ObservableRangeCollection(IEnumerable<T> collection)
-            : base(collection) { }
     }
 }

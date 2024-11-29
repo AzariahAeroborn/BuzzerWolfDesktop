@@ -22,5 +22,7 @@ namespace BuzzerWolf.Models
         public int PointsFor { get; set; }
         public int PointsAgainst { get; set; }
         public bool IsBot { get; set; }
+
+        public League League { get; set; }
     }
 }

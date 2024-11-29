@@ -1,6 +1,7 @@
 ﻿using BuzzerWolf.Models;
 using BuzzerWolf.Models.Extensions;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -76,43 +77,41 @@ namespace BuzzerWolf.ViewModels
             var total = 0;
             var bot = 0;
 
-            var leaguesList = _context.Leagues.Where(l => l.CountryId == SelectedCountry.Id && l.DivisionLevel == SelectedDivision).ToList();
+            var results = _context.LeagueResults.Where(r => r.League.CountryId == SelectedCountry.Id && r.League.DivisionLevel == SelectedDivision && r.Season == SelectedSeason.Id).ToList();
+            var standings = _context.Standings.Include(s => s.League).Where(s => s.League.CountryId == SelectedCountry.Id && s.League.DivisionLevel == SelectedDivision && s.Season == SelectedSeason.Id).ToList();
             var promotionStandings = new List<PromotionStanding>();
-            foreach (var league in leaguesList)
-            {
-                var leagueResults = _context.LeagueResults.FirstOrDefault(r => r.LeagueId == league.Id && r.Season == SelectedSeason.Id);
-                var leagueStandings = _context.Standings.Where(s => s.LeagueId == league.Id && s.Season == SelectedSeason.Id).ToList();
-                if (leagueResults is not null)
-                {
-                    if (_context.Standings.First(s => s.TeamId == leagueResults.Winner).IsBot)
-                        bot++;
 
-                    // Show winner and conference champions
-                    var promotableTeams = leagueStandings.Where(s => s.TeamId == leagueResults.Winner || s.ConferenceRank == 1).Select(s => new PromotionStanding(s, league.Name)).ToList();
+            if (results.Count > 0)
+            {
+                // Season is over - look for bot champions
+                bot += standings.Count(s => s.IsBot && results.Any(r => r.Winner == s.TeamId));
+
+                // Only show league winners and conference champions as promotable teams
+                var promotableTeams = standings.Where(s => results.Any(r => r.Winner == s.TeamId) || s.ConferenceRank == 1).Select(s => new PromotionStanding(s)).ToList();
+                promotionStandings.AddRange(promotableTeams);
+                SetTeamChampionStatus(promotableTeams, results);
+            }
+            else
+            {
+                // Check to see if we're in the playoffs
+                var playoffSchedule = _context.LeaguePlayoffs.Where(p => p.League.CountryId == SelectedCountry.Id && p.League.DivisionLevel == SelectedDivision && p.Season == SelectedSeason.Id).ToList();
+                if (playoffSchedule.Count > 0)
+                {
+                    // In the playoffs, no need to show anything other than conference champions in output
+                    var promotableTeams = standings.Where(s => s.ConferenceRank == 1).Select(s => new PromotionStanding(s)).ToList();
                     promotionStandings.AddRange(promotableTeams);
 
-                    SetTeamChampionStatus(promotableTeams, league.Id, SelectedSeason.Id);
+                    SetTeamEliminationStatus(promotableTeams, playoffSchedule);
+                    await SetTeamScheduleStatus(promotableTeams, SelectedSeason.Id);
+                    SetTeamChampionStatus(promotableTeams, results);
                 }
                 else
                 {
-                    if (_context.LeaguePlayoffs.Any(lp => lp.LeagueId == league.Id && lp.Season == SelectedSeason.Id))
-                    {
-                        // In the playoffs, no need to show anything other than conference champions in output
-                        var promotableTeams = leagueStandings.Where(s => s.ConferenceRank == 1).Select(s => new PromotionStanding(s, league.Name)).ToList();
-                        promotionStandings.AddRange(promotableTeams);
+                    // Not in playoffs yet, include second place teams
+                    var promotableTeams = standings.Where(s => s.ConferenceRank <= 2).Select(s => new PromotionStanding(s)).ToList();
+                    promotionStandings.AddRange(promotableTeams);
 
-                        SetTeamEliminationStatus(promotableTeams, league.Id, SelectedSeason.Id);
-                        await SetTeamScheduleStatus(promotableTeams, SelectedSeason.Id);
-                        SetTeamChampionStatus(promotableTeams, league.Id, SelectedSeason.Id);
-                    }
-                    else
-                    {
-                        // Not in playoffs yet, include second place teams
-                        var promotableTeams = leagueStandings.Where(s => s.ConferenceRank <= 2).Select(s => new PromotionStanding(s, league.Name)).ToList();
-                        promotionStandings.AddRange(promotableTeams);
-
-                        await SetTeamScheduleStatus(promotableTeams, SelectedSeason.Id);
-                    }
+                    await SetTeamScheduleStatus(promotableTeams, SelectedSeason.Id);
                 }
             }
 
@@ -162,13 +161,9 @@ namespace BuzzerWolf.ViewModels
             }
         }
 
-        private void SetTeamEliminationStatus(IEnumerable<PromotionStanding> promotableTeams, int leagueId, int season)
+        private void SetTeamEliminationStatus(IEnumerable<PromotionStanding> promotableTeams, IEnumerable<PlayoffSchedule> playoffSchedule)
         {
-            var leaguePlayoffMatches = _context.LeaguePlayoffs.Where(p => p.LeagueId == leagueId && p.Season == season);
-            if (!leaguePlayoffMatches.Any())
-                return;
-
-            var matches = _context.Matches.Where(m => leaguePlayoffMatches.Any(po => po.MatchId == m.Id));
+            var matches = playoffSchedule.Select(p => p.Match);
             foreach (var team in promotableTeams)
             {
                 team.IsEliminated = !matches.Any(m => m.TeamParticipatedInMatch(team.TeamId)) ||
@@ -215,12 +210,11 @@ namespace BuzzerWolf.ViewModels
             public int Losses { get; set; } = 0;
         }
 
-        private void SetTeamChampionStatus(IEnumerable<PromotionStanding> promotableTeams, int leagueId, int season)
+        private void SetTeamChampionStatus(IEnumerable<PromotionStanding> promotableTeams, IEnumerable<Result> leagueResults)
         {
-            var leagueResult = _context.LeagueResults.FirstOrDefault(r => r.LeagueId == leagueId && r.Season == season);
             foreach (var team in promotableTeams)
             {
-                team.IsChampionPromotion = leagueResult?.Winner == team.TeamId;
+                team.IsChampionPromotion = leagueResults.Any(r => r.Winner == team.TeamId);
             }
         }
 

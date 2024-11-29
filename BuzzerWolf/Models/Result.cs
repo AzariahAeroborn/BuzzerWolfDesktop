@@ -8,5 +8,7 @@ namespace BuzzerWolf.Models
         public int LeagueId { get; set; }
         public int Season { get; set; }
         public int Winner { get; set; }
+
+        public League League { get; set; }
     }
 }

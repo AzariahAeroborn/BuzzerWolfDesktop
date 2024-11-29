@@ -44,7 +44,7 @@ namespace BuzzerWolf.ViewModels
 
         private void PopulateSyncList()
         {
-            SynchronizedTables.ReplaceRange(_context.Sync);
+            SynchronizedTables.ReplaceRange(_context.Sync.ToList());
         }
 
         [ObservableProperty]
@@ -137,16 +137,8 @@ namespace BuzzerWolf.ViewModels
 
         private async Task SyncStandings(bool force)
         {
-            var syncedLeagues = _context.Sync.Where(s => s.DataTable.StartsWith("standings")).Select(GetLeagueToSync);
+            var syncedLeagues = _context.Sync.Where(s => s.DataTable == "standings").Select(s => new LeagueToSync(s.EntityId, (int)s.Season!));
             await SyncStandings(force, syncedLeagues);
-        }
-
-        private LeagueToSync GetLeagueToSync(Sync syncTableRecord)
-        {
-            var dataTableInfo = syncTableRecord.DataTable.Split("_");
-            var league = int.Parse(dataTableInfo.ElementAt(1).Replace("league", ""));
-            var season = int.Parse(dataTableInfo.ElementAt(2).Replace("season", ""));
-            return new LeagueToSync(league, season);
         }
 
         public async Task SyncStandingsForDivision(bool force, int countryId, int divisionLevel, int season)

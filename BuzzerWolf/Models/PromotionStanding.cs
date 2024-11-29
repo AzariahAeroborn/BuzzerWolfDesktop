@@ -2,7 +2,7 @@
 {
     public class PromotionStanding
     {
-        public PromotionStanding(Standings standings, string leagueName)
+        public PromotionStanding(Standings standings)
         {
             TeamId = standings.TeamId;
             TeamName = standings.TeamName;
@@ -10,7 +10,7 @@
             Losses = standings.Losses;
             PointDifference = standings.PointsFor - standings.PointsAgainst;
             ConferenceRank = standings.ConferenceRank;
-            LeagueName = leagueName;
+            League = standings.League;
             ConferenceName = standings.Conference.ToString();
         }
 
@@ -20,7 +20,7 @@
         public int Losses { get; set; }
         public int PointDifference { get; set; }
         public int ConferenceRank { get; set; }
-        public string LeagueName { get; set; }
+        public League League { get; set; }
         public string ConferenceName { get; set; }
         public string NextOpponent { get; set; }
         public string NextOpponentLastResult { get; set; }

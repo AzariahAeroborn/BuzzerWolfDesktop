@@ -66,7 +66,7 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="#" Binding="{Binding PromotionRank}" />
                     <DataGridTextColumn Header="Team Name" Binding="{Binding TeamName}" />
-                    <DataGridTextColumn Header="League" Binding="{Binding LeagueName}" />
+                    <DataGridTextColumn Header="League" Binding="{Binding League.Name}" />
                     <DataGridTextColumn Header="Conf Name" Binding="{Binding ConferenceName}" />
                     <DataGridTextColumn Header="Conf Rank" Binding="{Binding ConferenceRank}" />
                     <DataGridTextColumn Header="Wins" Binding="{Binding Wins}" />
