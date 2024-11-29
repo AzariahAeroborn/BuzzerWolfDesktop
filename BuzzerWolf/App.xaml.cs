@@ -2,6 +2,8 @@
 using BuzzerWolf.Models;
 using BuzzerWolf.ViewModels;
 using BuzzerWolf.Views;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -24,6 +26,9 @@ namespace BuzzerWolf
                     ConfigureServices(services);
                 })
                 .Build();
+            using var scope = Host.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<BuzzerWolfContext>();
+            db.Database.Migrate();
         }
 
         private void ConfigureServices(IServiceCollection services)
@@ -36,7 +41,9 @@ namespace BuzzerWolf
 
             services.AddSingleton<AutoPromotionViewModel>();
             services.AddSingleton<AutoPromotion>();
-            
+
+            services.AddSingleton<SynchronizationViewModel>();
+
             services.AddSingleton<TeamHeadquartersViewModel>();
 
             services.AddSingleton<MainWindowViewModel>();

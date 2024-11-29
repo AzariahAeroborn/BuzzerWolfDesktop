@@ -1,32 +1,34 @@
-﻿using BuzzerWolf.BBAPI;
-using BuzzerWolf.BBAPI.Model;
-using BuzzerWolf.Extensions;
-using BuzzerWolf.Models;
+﻿using BuzzerWolf.Models;
+using BuzzerWolf.Models.Extensions;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Data;
+using System.Windows;
 
 namespace BuzzerWolf.ViewModels
 {
     public partial class AutoPromotionViewModel : ObservableObject
     {
-        private readonly IBBAPIClient _bbapi;
-        public AutoPromotionViewModel(IBBAPIClient bbapi)
+        private readonly BuzzerWolfContext _context;
+        private readonly SynchronizationViewModel _syncViewModel;
+        public AutoPromotionViewModel(BuzzerWolfContext context, SynchronizationViewModel syncViewModel)
         {
-            _bbapi = bbapi;
+            _context = context;
+            _syncViewModel = syncViewModel;
         }
 
         [ObservableProperty]
-        private int? season;
+        private List<Season> seasons = new();
+        [ObservableProperty]
+        private Season? selectedSeason;
 
         [ObservableProperty]
         private List<Country> countries = new();
         [ObservableProperty]
-        [NotifyPropertyChangedFor(nameof(CanSelectDivision),nameof(Divisions))]
+        [NotifyPropertyChangedFor(nameof(CanSelectDivision), nameof(Divisions))]
         private Country? selectedCountry;
 
         public List<int> Divisions => (SelectedCountry != null && SelectedCountry.Divisions > 1) ? Enumerable.Range(2, (int)(SelectedCountry.Divisions - 1)).ToList() : new List<int>();
@@ -36,7 +38,16 @@ namespace BuzzerWolf.ViewModels
 
         [ObservableProperty]
         private List<PromotionStanding> promotionStandings = new();
-        public bool ShowPromotionStandings => SelectedDivision != null;
+        public bool ShowPromotionStandings => Loaded;
+
+        [ObservableProperty]
+        private DateTime? lastUpdated;
+        [ObservableProperty]
+        private DateTime? nextUpdate;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(ShowPromotionStandings))]
+        private bool loaded;
 
         [ObservableProperty]
         private int totalPromotionSpots = 0;
@@ -50,99 +61,187 @@ namespace BuzzerWolf.ViewModels
 
         public bool ShowChampionPromotionSpots => ChampionPromotionSpots > 0;
 
-        partial void OnSeasonChanged(int? value)
+        partial void OnSelectedSeasonChanged(Season? value)
         {
-            OnSelectedDivisionChanged(null);
+            Task.Run(UpdatePromotionStandings);
         }
 
 
         partial void OnSelectedCountryChanged(Country? value)
         {
-            OnSelectedDivisionChanged(null);
+            Task.Run(UpdatePromotionStandings);
         }
 
         partial void OnSelectedDivisionChanged(int? value)
         {
-            if (SelectedCountry == null || SelectedDivision == null) return;
+            Task.Run(UpdatePromotionStandings);
+        }
 
-            var auto = 0;
-            var total = 0;
-            var bot = 0;
+        private async Task UpdatePromotionStandings()
+        {
+            if (SelectedSeason == null || SelectedCountry == null || SelectedDivision == null) return;
 
-            var leaguesList = Task.Run(() => _bbapi.GetLeagues(SelectedCountry.Id, SelectedDivision.Value)).Result;
-            var standings = new List<TeamStanding>();
-            foreach (var league in leaguesList)
+            try
             {
-                var leagueStandings = Task.Run(() => _bbapi.GetStandings(league.Id, Season)).Result;
-                if (leagueStandings.IsFinal)
+                Loaded = false;
+                await _syncViewModel.SyncStandingsForDivision(false, SelectedCountry.Id, (int)SelectedDivision, SelectedSeason.Id);
+
+                var auto = 0;
+                var total = 0;
+                var bot = 0;
+
+                var results = _context.LeagueResults.Where(r => r.League.CountryId == SelectedCountry.Id && r.League.DivisionLevel == SelectedDivision && r.Season == SelectedSeason.Id).ToList();
+                var standings = _context.Standings.Include(s => s.League).Where(s => s.League.CountryId == SelectedCountry.Id && s.League.DivisionLevel == SelectedDivision && s.Season == SelectedSeason.Id).ToList();
+                var promotionStandings = new List<PromotionStanding>();
+
+                if (results.Count > 0)
                 {
-                    var winner = leagueStandings.Big8.Where(t => t.IsWinner).Union(leagueStandings.Great8.Where(t => t.IsWinner)).First();
-                    if (winner.IsBot) { bot++; }
+                    // Season is over - look for bot champions
+                    bot += standings.Count(s => s.IsBot && results.Any(r => r.Winner == s.TeamId));
+
+                    // Only show league winners and conference champions as promotable teams
+                    var promotableTeams = standings.Where(s => results.Any(r => r.Winner == s.TeamId) || s.ConferenceRank == 1).Select(s => new PromotionStanding(s)).ToList();
+                    promotionStandings.AddRange(promotableTeams);
+                    SetTeamChampionStatus(promotableTeams, results);
                 }
-                standings.AddRange(leagueStandings.Big8);
-                standings.AddRange(leagueStandings.Great8);
-            }
-
-            var nextDivisionHigher = (int)SelectedDivision - 1;
-            var checkDivision = nextDivisionHigher;
-            do
-            {
-                var promotingLeaguesList = Task.Run(() => _bbapi.GetLeagues(SelectedCountry.Id, checkDivision)).Result;
-                foreach (var league in promotingLeaguesList)
+                else
                 {
-                    int leagueBots = 0;
-                    var leagueStandings = Task.Run(() => _bbapi.GetStandings(league.Id)).Result;
-                    if (checkDivision == nextDivisionHigher)
+                    // Check to see if we're in the playoffs
+                    var playoffSchedule = _context.LeaguePlayoffs.Where(p => p.League.CountryId == SelectedCountry.Id && p.League.DivisionLevel == SelectedDivision && p.Season == SelectedSeason.Id).ToList();
+                    if (playoffSchedule.Count > 0)
                     {
-                        if (leagueStandings.IsFinal)
-                        {
+                        // In the playoffs, no need to show anything other than conference champions in output
+                        var promotableTeams = standings.Where(s => s.ConferenceRank == 1).Select(s => new PromotionStanding(s)).ToList();
+                        promotionStandings.AddRange(promotableTeams);
 
-                        } else
+                        SetTeamEliminationStatus(promotableTeams, playoffSchedule);
+                        await SetTeamScheduleStatus(promotableTeams, SelectedSeason.Id);
+                        SetTeamChampionStatus(promotableTeams, results);
+                    }
+                    else
+                    {
+                        // Not in playoffs yet, include second place teams
+                        var promotableTeams = standings.Where(s => s.ConferenceRank <= 2).Select(s => new PromotionStanding(s)).ToList();
+                        promotionStandings.AddRange(promotableTeams);
+
+                        await SetTeamScheduleStatus(promotableTeams, SelectedSeason.Id);
+                    }
+                }
+
+                var nextDivisionHigher = (int)SelectedDivision - 1;
+                var checkDivision = nextDivisionHigher;
+                do
+                {
+                    await _syncViewModel.SyncStandingsForDivision(false, SelectedCountry.Id, checkDivision, SelectedSeason.Id);
+                    var promotingLeaguesList = _context.Leagues.Where(l => l.CountryId == SelectedCountry.Id && l.DivisionLevel == checkDivision).ToList();
+                    foreach (var league in promotingLeaguesList)
+                    {
+                        var leagueStandings = _context.Standings.Where(s => s.LeagueId == league.Id && s.Season == SelectedSeason.Id).ToList();
+                        int leagueBots = (checkDivision == nextDivisionHigher)
+                            ? leagueStandings.Where(s => s.ConferenceRank < 8 && s.IsBot).Count()
+                            : leagueStandings.Where(s => s.IsBot).Count();
+
+                        if (checkDivision == nextDivisionHigher)
                         {
-                            leagueBots = leagueStandings.Big8.Count(t => t.ConferenceRank < 8 && t.IsBot) + leagueStandings.Great8.Count(t => t.ConferenceRank < 8 && t.IsBot);
+                            auto += (SelectedCountry.Name == "Utopia" && SelectedDivision < 4 ? 2 :
+                                     SelectedCountry.Name == "Utopia" && SelectedDivision == 4 ? 0 : 1);
+                            total += (SelectedCountry.Name == "Utopia" ? 6 : 5);
                         }
-                    } else
-                    {
-                        leagueBots = leagueStandings.Big8.Count(t => t.IsBot) + leagueStandings.Great8.Count(t => t.IsBot);
-                    }
 
-                    if (checkDivision == nextDivisionHigher)
-                    {
-                        auto += (SelectedCountry.Name == "Utopia" && SelectedDivision < 4 ? 2 : 1);
-                        total += (SelectedCountry.Name == "Utopia" ? 6 : 5);
+                        total += leagueBots;
+                        bot += leagueBots;
                     }
+                    AutoPromotionSpots = auto;
+                    TotalPromotionSpots = total;
+                    BotPromotionSpots = bot;
 
-                    total += leagueBots;
-                    bot += leagueBots;
+                    checkDivision--;
+                } while (checkDivision >= 1);
+
+                ChampionPromotionSpots = promotionStandings.Count(s => s.IsChampionPromotion);
+                PromotionStandings = promotionStandings.OrderByDescending(s => s.IsChampionPromotion)
+                                                       .ThenBy(s => s.ConferenceRank)
+                                                       .ThenByDescending(s => s.Wins)
+                                                       .ThenByDescending(s => s.PointDifference)
+                                                       .ToList();
+
+                foreach (var standing in PromotionStandings.Select((ps, idx) => new { Team = ps, Index = idx }))
+                {
+                    standing.Team.PromotionRank = standing.Index + 1;
+                    standing.Team.IsAutoPromotion = standing.Index < AutoPromotionSpots + ChampionPromotionSpots;
+                    standing.Team.IsBotPromotion = standing.Index < BotPromotionSpots + AutoPromotionSpots + ChampionPromotionSpots;
+                    standing.Team.IsTotalPromotion = standing.Index < TotalPromotionSpots;
                 }
-                AutoPromotionSpots = auto;
-                TotalPromotionSpots = total;
-                BotPromotionSpots = bot;
+            }
+            finally
+            {
+                Loaded = true;
+            }
+        }
 
-                checkDivision--;
-            } while (checkDivision >= 1);
+        private void SetTeamEliminationStatus(IEnumerable<PromotionStanding> promotableTeams, IEnumerable<PlayoffSchedule> playoffSchedule)
+        {
+            var matches = playoffSchedule.Select(p => p.Match);
+            foreach (var team in promotableTeams)
+            {
+                team.IsEliminated = !matches.Any(m => m.TeamParticipatedInMatch(team.TeamId)) ||
+                                     matches.Any(m => m.Type != MatchType.Final && m.HasResult() && m.TeamLostMatch(team.TeamId)) ||
+                                     matches.Where(m => m.Type == MatchType.Final && m.HasResult() && m.TeamLostMatch(team.TeamId)).Count() == 2;
+            }
+        }
 
-            ChampionPromotionSpots = standings.Count(s => s.IsWinner);
-            PromotionStandings = standings.Where(s => s.IsWinner || s.ConferenceRank <= 2)
-                                        .OrderByDescending(s => s.IsWinner)
-                                        .ThenBy(s => s.ConferenceRank)
-                                        .ThenByDescending(s => s.Wins)
-                                        .ThenByDescending(s => (s.PointDifference))
-                                        .Select((s, idx) => new PromotionStanding(s)
-                                        {
-                                            PromotionRank = idx + 1,
-                                            IsChampionPromotion = s.IsWinner,
-                                            IsAutoPromotion = (!s.IsWinner && (idx + 1) <= (ChampionPromotionSpots + AutoPromotionSpots)),
-                                            IsBotPromotion = (!s.IsWinner && (idx + 1) > (ChampionPromotionSpots + AutoPromotionSpots) && (idx + 1) <= (ChampionPromotionSpots + AutoPromotionSpots + BotPromotionSpots)),
-                                            IsTotalPromotion = (!s.IsWinner && (idx + 1) > (ChampionPromotionSpots + AutoPromotionSpots + BotPromotionSpots) && (idx + 1) <= TotalPromotionSpots),
-                                        }).ToList();
+        private async Task SetTeamScheduleStatus(IEnumerable<PromotionStanding> promotableTeams, int season)
+        {
+            await _syncViewModel.SyncScheduleForTeams(false, promotableTeams.Select(t => t.TeamId), season);
+
+            foreach (var team in promotableTeams)
+            {
+                var remainingMatches = _context.Matches.Where(m => m.WinningTeamId == null &&
+                                                                   (m.AwayTeamId == team.TeamId || m.HomeTeamId == team.TeamId) &&
+                                                                   m.Type <= MatchType.Relegation)
+                                                       .OrderBy(m => m.StartTime)
+                                                       .ToList();
+                var nextMatch = remainingMatches.FirstOrDefault();
+                if (nextMatch != null)
+                {
+                    var nextOpponentId = nextMatch.OpponentTeamId(team.TeamId);
+                    var nextOpponent = _context.Standings.First(s => s.TeamId == nextOpponentId && s.Season == season);
+                    team.NextOpponent = $"{(nextMatch.AwayTeamId == team.TeamId ? "@" : "v")} {nextOpponent.TeamName} ({nextOpponent.Wins}-{nextOpponent.Losses})";
+                    var lastMeeting = _context.Matches.Where(m => m.WinningTeamId != null &&
+                                                                  ((m.AwayTeamId == team.TeamId && m.HomeTeamId == nextOpponentId) ||
+                                                                   (m.HomeTeamId == team.TeamId && m.AwayTeamId == nextOpponentId))
+                                                            )
+                                                      .OrderBy(m => m.StartTime).LastOrDefault();
+                    team.NextOpponentLastResult = lastMeeting != null ? lastMeeting.ResultForTeam(team.TeamId) : string.Empty;
+                }
+
+                var remainingOpponents = remainingMatches.Select(m => m.AwayTeamId == team.TeamId ? m.HomeTeamId : m.AwayTeamId).Distinct();
+                var remainingRecords = _context.Standings.Where(s => remainingOpponents.Any(o => o == s.TeamId) && s.Season == season).ToList()
+                                                         .Aggregate(new { Wins = 0, Losses = 0 }, (sum, next) => new { Wins = sum.Wins + next.Wins, Losses = sum.Losses + next.Losses });
+                team.RemainingStrengthOfSchedule = $"{remainingRecords.Wins} - {remainingRecords.Losses}";
+            }
+        }
+
+        private class RemainingRecords()
+        {
+            public int Wins { get; set; } = 0;
+            public int Losses { get; set; } = 0;
+        }
+
+        private void SetTeamChampionStatus(IEnumerable<PromotionStanding> promotableTeams, IEnumerable<Result> leagueResults)
+        {
+            foreach (var team in promotableTeams)
+            {
+                team.IsChampionPromotion = leagueResults.Any(r => r.Winner == team.TeamId);
+            }
         }
 
         public bool CanSelectDivision => SelectedCountry != null;
 
-        public async Task Activate()
+        public void Activate()
         {
-            Countries = (await _bbapi.GetCountries()).Where(c => c.Divisions > 1).ToList();
+            Countries = _context.Countries.ToList();
+            Seasons = _context.Seasons.OrderByDescending(s => s.Id).ToList();
         }
     }
 }

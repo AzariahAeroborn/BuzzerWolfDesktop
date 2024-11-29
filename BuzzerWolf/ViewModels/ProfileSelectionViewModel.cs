@@ -27,9 +27,9 @@ namespace BuzzerWolf.ViewModels
         }
 
         [ObservableProperty]
-        public List<Profile> availableProfiles = new();
+        private List<Profile> availableProfiles = new();
         [ObservableProperty]
-        public Profile? selectedProfile;
+        private Profile? selectedProfile;
 
         [ObservableProperty]
         private string status = string.Empty;
@@ -42,8 +42,10 @@ namespace BuzzerWolf.ViewModels
 
         partial void OnSelectedProfileChanged(Profile? value)
         {
+            IsLoggedIn = false;
             Task.Run(LoginBBAPI);
             CanRemoveProfile = SelectedProfile != null;
+            _context.LoggedInTeam = SelectedProfile == null ? -1 : SelectedProfile.TeamId;
         }
 
         private async Task LoginBBAPI()

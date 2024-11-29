@@ -3,6 +3,7 @@ using System;
 using BuzzerWolf.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BuzzerWolf.Migrations
 {
     [DbContext(typeof(BuzzerWolfContext))]
-    partial class BuzzerWolfContextModelSnapshot : ModelSnapshot
+    [Migration("20241128015124_ChangeSyncTableStructure")]
+    partial class ChangeSyncTableStructure
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -60,6 +63,7 @@ namespace BuzzerWolf.Migrations
             modelBuilder.Entity("BuzzerWolf.Models.Match", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("AwayTeamId")

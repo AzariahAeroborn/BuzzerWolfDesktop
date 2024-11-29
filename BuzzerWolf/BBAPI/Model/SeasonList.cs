@@ -24,13 +24,13 @@ namespace BuzzerWolf.BBAPI.Model
         public Season(XElement seasonInfo)
         {
             Id = int.Parse(seasonInfo.Attribute("id")!.Value);
-            Start = DateTime.Parse(seasonInfo.Descendants("start").First().Value);
+            Start = DateTimeOffset.Parse(seasonInfo.Descendants("start").First().Value);
             var finish = seasonInfo.Descendants("finish").FirstOrDefault();
-            Finish = (finish != null) ? DateTime.Parse(finish.Value) : null;
+            Finish = (finish != null) ? DateTimeOffset.Parse(finish.Value) : null;
         }
 
         public int Id { get; set; }
-        public DateTime Start { get; set; }
-        public DateTime? Finish { get; set; }
+        public DateTimeOffset Start { get; set; }
+        public DateTimeOffset? Finish { get; set; }
     }
 }

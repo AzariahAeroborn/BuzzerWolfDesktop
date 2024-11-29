@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -66,7 +67,7 @@ namespace BuzzerWolf.BBAPI
             var client = CreateBBAPIClient();
             if (await Login(userName, accessKey, secondTeam, client))
             {
-                return await GetTeamInfo(client);
+                return await GetTeamInfo();
             }
 
             throw new UnexpectedResponseException();
@@ -192,15 +193,10 @@ namespace BuzzerWolf.BBAPI
 
         public async Task<TeamInfo> GetTeamInfo(int? teamId = null)
         {
-            return await GetTeamInfo(_client, teamId);
-        }
-
-        private async Task<TeamInfo> GetTeamInfo(HttpClient client, int? teamId = null)
-        {
             var bbapi = await CallAPI("teaminfo.aspx", new Dictionary<string, string?>()
             {
                 { "teamid", teamId?.ToString() }
-            }, client);
+            });
 
             if (bbapi.IsSuccess)
             {
@@ -259,50 +255,54 @@ namespace BuzzerWolf.BBAPI
             }
         }
 
+        private SemaphoreSlim apiThrottler = new(50);
         private async Task<BBAPIResponse> CallAPI(string requestPath, Dictionary<string, string?> queryParams)
         {
-            return await CallAPI(requestPath, queryParams, _client);
-        }
-
-        private async Task<BBAPIResponse> CallAPI(string requestPath, Dictionary<string, string?> queryParams, HttpClient client)
-        {
-            var response = await client.GetAsync(QueryHelpers.AddQueryString(requestPath, queryParams.Where(q => q.Value != null)));
-            XElement bbapiResponse = XElement.Load(await response.Content.ReadAsStreamAsync());
-
-            var error = bbapiResponse.Descendants("error").FirstOrDefault();
-            if (error != null)
+            try
             {
-                var errorType = error.Attribute("message")!.Value;
-                switch (errorType)
+                await apiThrottler.WaitAsync();
+                var response = await _client.GetAsync(QueryHelpers.AddQueryString(requestPath, queryParams.Where(q => q.Value != null)));
+                XElement bbapiResponse = XElement.Load(await response.Content.ReadAsStreamAsync());
+
+                var error = bbapiResponse.Descendants("error").FirstOrDefault();
+                if (error != null)
                 {
-                    case "NotAuthorized":
-                        throw new UnauthorizedException();
-                    case "ServerError":
-                        throw new BBAPIServerErrorException();
-                    case "UnknownTeamID":
-                        throw new UnexpectedResponseException("Invalid team ID provided");
-                    case "UnknownPlayerID":
-                        throw new UnexpectedResponseException("Invalid player ID provided");
-                    case "UnknownLeagueID":
-                        throw new UnexpectedResponseException("Invalid league ID provided");
-                    case "UnknownSeason":
-                        throw new UnexpectedResponseException("Invalid season provided");
-                    default:
-                        return new BBAPIResponse()
-                        {
-                            IsSuccess = false,
-                            Error = errorType,
-                            Response = bbapiResponse
-                        };
+                    var errorType = error.Attribute("message")!.Value;
+                    switch (errorType)
+                    {
+                        case "NotAuthorized":
+                            throw new UnauthorizedException();
+                        case "ServerError":
+                            throw new BBAPIServerErrorException();
+                        case "UnknownTeamID":
+                            throw new UnexpectedResponseException("Invalid team ID provided");
+                        case "UnknownPlayerID":
+                            throw new UnexpectedResponseException("Invalid player ID provided");
+                        case "UnknownLeagueID":
+                            throw new UnexpectedResponseException("Invalid league ID provided");
+                        case "UnknownSeason":
+                            throw new UnexpectedResponseException("Invalid season provided");
+                        default:
+                            return new BBAPIResponse()
+                            {
+                                IsSuccess = false,
+                                Error = errorType,
+                                Response = bbapiResponse
+                            };
+                    }
                 }
-            }
 
-            return new BBAPIResponse()
+                return new BBAPIResponse()
+                {
+                    IsSuccess = true,
+                    Error = null,
+                    Response = bbapiResponse
+                };
+            }
+            finally
             {
-                IsSuccess = true,
-                Error = null,
-                Response = bbapiResponse
-            };
+                apiThrottler.Release();
+            }
         }
     }
 }

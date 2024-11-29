@@ -77,9 +77,6 @@ namespace BuzzerWolf.ViewModels
             }
         }
 
-        private bool CanLoginBBAPI()
-        {
-            return !string.IsNullOrEmpty(User) && !string.IsNullOrEmpty(AccessKey);
-        }
+        private bool CanLoginBBAPI() => !string.IsNullOrEmpty(User) && !string.IsNullOrEmpty(AccessKey);
     }
 }

@@ -17,8 +17,10 @@
         </Grid.RowDefinitions>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="5 10">
             <Label>Season:</Label>
-            <TextBox Width="50"
-                     Text="{Binding Season}" />
+            <ComboBox MinWidth="50"
+                      ItemsSource="{Binding Seasons}"
+                      DisplayMemberPath="Id"
+                      SelectedItem="{Binding SelectedSeason}" />
             <Label>Country:</Label>
             <ComboBox MinWidth="200"
                       ItemsSource="{Binding Countries}"
@@ -49,11 +51,14 @@
                             <DataTrigger Binding="{Binding IsBotPromotion}" Value="True">
                                 <Setter Property="Background" Value="Yellow" />
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding IsAutoPromotion}" Value="True">
+                                <Setter Property="Background" Value="LightGreen" />
+                            </DataTrigger>
                             <DataTrigger Binding="{Binding IsChampionPromotion}" Value="True">
                                 <Setter Property="Background" Value="OrangeRed" />
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding IsAutoPromotion}" Value="True">
-                                <Setter Property="Background" Value="LightGreen" />
+                            <DataTrigger Binding="{Binding IsEliminated}" Value="True">
+                                <Setter Property="FontStyle" Value="Italic" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
@@ -61,12 +66,15 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="#" Binding="{Binding PromotionRank}" />
                     <DataGridTextColumn Header="Team Name" Binding="{Binding TeamName}" />
-                    <DataGridTextColumn Header="League" Binding="{Binding LeagueName}" />
+                    <DataGridTextColumn Header="League" Binding="{Binding League.Name}" />
                     <DataGridTextColumn Header="Conf Name" Binding="{Binding ConferenceName}" />
                     <DataGridTextColumn Header="Conf Rank" Binding="{Binding ConferenceRank}" />
                     <DataGridTextColumn Header="Wins" Binding="{Binding Wins}" />
                     <DataGridTextColumn Header="Losses" Binding="{Binding Losses}" />
                     <DataGridTextColumn Header="PD" Binding="{Binding PointDifference}" />
+                    <DataGridTextColumn Header="SOS Rem" Binding="{Binding RemainingStrengthOfSchedule}" />
+                    <DataGridTextColumn Header="Next Opp" Binding="{Binding NextOpponent}" />
+                    <DataGridTextColumn Header="Prev Result" Binding="{Binding NextOpponentLastResult}" />
                 </DataGrid.Columns>
             </DataGrid>
             <StackPanel Orientation="Vertical"
